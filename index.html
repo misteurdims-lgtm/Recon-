@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RECON — Identification des véhicules militaires</title>
+<meta name="theme-color" content="#12160f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RECON">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#12160f; --panel:#1b2117; --panel2:#232b1e; --line:#34402c;
+  --txt:#e6e4d6; --mut:#9aa38c; --sand:#d2b96f; --olive:#7d8f4e;
+  --ok:#7fbf5a; --bad:#d9654b;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--txt);font-family:Barlow,system-ui,sans-serif;font-size:16px;line-height:1.45;-webkit-tap-highlight-color:transparent}
+body{min-height:100vh;background-image:radial-gradient(circle at 20% 0%,#1f2819 0,transparent 50%),repeating-linear-gradient(0deg,transparent 0 39px,#ffffff05 39px 40px),repeating-linear-gradient(90deg,transparent 0 39px,#ffffff05 39px 40px)}
+.wrap{max-width:980px;margin:0 auto;padding:calc(16px + env(safe-area-inset-top)) 16px calc(60px + env(safe-area-inset-bottom))}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0 16px;border-bottom:1px solid var(--line);margin-bottom:18px}
+.logo{font-family:"Black Ops One",Impact,sans-serif;font-size:26px;letter-spacing:2px;color:var(--sand);cursor:pointer}
+.logo small{display:block;font-family:Barlow,system-ui,sans-serif;font-size:12px;letter-spacing:1.5px;color:var(--mut);text-transform:uppercase;font-weight:600}
+.rank{text-align:right;font-size:13px;color:var(--mut)}
+.rank b{display:block;font-family:"Black Ops One",Impact,sans-serif;color:var(--txt);font-size:16px;font-weight:400;letter-spacing:1px}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+h2{font-family:"Black Ops One",Impact,sans-serif;font-weight:400;letter-spacing:1px;font-size:24px;margin-bottom:6px}
+.sub{color:var(--mut);margin-bottom:18px}
+.levels{display:grid;gap:12px}
+.lvl{display:grid;grid-template-columns:64px 1fr;gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
+.lvl .num{font-family:"Black Ops One",Impact,sans-serif;font-size:34px;color:var(--sand);display:flex;align-items:center;justify-content:center;border-right:1px dashed var(--line)}
+.lvl.locked .num{color:#556048}
+.lvl h3{font-size:18px;font-weight:700;margin-bottom:2px}
+.lvl p{color:var(--mut);font-size:14px}
+.meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.tag{font-size:12px;padding:2px 8px;border-radius:20px;border:1px solid var(--line);color:var(--mut)}
+.tag.good{border-color:#4c6d36;color:var(--ok)}
+.btns{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+button{font:inherit;cursor:pointer;border:none;border-radius:8px;padding:9px 16px;font-weight:600}
+.b1{background:var(--sand);color:#1a1a10}
+.b2{background:transparent;color:var(--txt);border:1px solid var(--line)}
+button:disabled{opacity:.4;cursor:not-allowed}
+.back{background:none;border:none;color:var(--mut);padding:0;margin-bottom:12px;font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;cursor:pointer}
+.card .nm{padding:8px 12px 10px;font-weight:700;display:flex;justify-content:space-between;gap:6px}
+.card .nm span{font-weight:400;color:var(--mut);font-size:13px;white-space:nowrap}
+.ph{background:#0e120b;border-bottom:1px solid var(--line);aspect-ratio:16/10;overflow:hidden}
+.ph img{width:100%;height:100%;object-fit:cover;display:block}
+.ph.big{aspect-ratio:auto;max-height:52vh;display:flex;justify-content:center}
+.ph.big img{width:auto;max-width:100%;height:auto;max-height:52vh;object-fit:contain}
+.cred{font-size:12px;color:var(--mut);margin-top:6px}
+.thumbs{display:flex;gap:6px;overflow-x:auto;margin-top:8px;padding-bottom:4px}
+.thumbs img{flex:0 0 auto;height:56px;width:84px;object-fit:cover;border-radius:4px;border:2px solid transparent;cursor:pointer;opacity:.65}
+.thumbs img.on{border-color:var(--sand);opacity:1}
+.sheet{position:fixed;inset:0;background:#000a;display:none;align-items:flex-end;justify-content:center;z-index:10}
+.sheet.on{display:flex}
+.sheet .in{background:var(--panel);border:1px solid var(--line);border-radius:14px 14px 0 0;max-width:720px;width:100%;max-height:92vh;overflow:auto;padding-bottom:env(safe-area-inset-bottom)}
+@media(min-width:760px){.sheet{align-items:center}.sheet .in{border-radius:14px}}
+.sheet .hd{display:flex;justify-content:space-between;align-items:flex-start;padding:16px 18px 6px;gap:12px}
+.sheet .hd h3{font-family:"Black Ops One",Impact,sans-serif;font-weight:400;font-size:22px;letter-spacing:.5px}
+.sheet .hd .x{background:var(--panel2);color:var(--txt);padding:6px 12px}
+.sheet .bd{padding:0 18px 20px}
+.sheet .ph.big{border:none;border-radius:8px;margin-top:4px}
+.key{background:#2a2f1c;border-left:4px solid var(--sand);padding:10px 12px;border-radius:6px;margin:14px 0}
+.key b{color:var(--sand);font-size:12px;letter-spacing:1px;text-transform:uppercase;display:block}
+.facts{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:12px 0}
+.fact{background:var(--panel2);border-radius:6px;padding:8px 10px}
+.fact span{display:block;font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:1px}
+ul.ind{padding-left:20px;margin-top:6px}
+ul.ind li{margin:4px 0}
+.qtop{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:14px;color:var(--mut)}
+.bar{height:6px;background:var(--panel2);border-radius:4px;overflow:hidden;margin-bottom:16px}
+.bar i{display:block;height:100%;background:var(--sand);transition:width .3s}
+.qbox{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px 16px}
+@media(max-width:520px){.opts{grid-template-columns:1fr}}
+.opt{background:var(--panel2);color:var(--txt);border:1px solid var(--line);text-align:left;padding:12px 14px;font-weight:600}
+.opt.ok{background:#2e4a22;border-color:var(--ok);opacity:1}
+.opt.ko{background:#4a2720;border-color:var(--bad);opacity:1}
+.fb{padding:0 16px 16px;display:none}
+.fb.on{display:block}
+.fb .msg{padding:12px;border-radius:8px;margin-bottom:12px;font-size:15px}
+.fb .msg.ok{background:#22351a}
+.fb .msg.ko{background:#3a221c}
+.res{text-align:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:28px 18px}
+.res .big{font-family:"Black Ops One",Impact,sans-serif;font-size:60px;color:var(--sand);line-height:1}
+.res p{color:var(--mut);margin:10px 0 18px}
+.res .btns{justify-content:center}
+.review{text-align:left;margin-top:20px;border-top:1px dashed var(--line);padding-top:14px}
+.review div{padding:6px 0;font-size:14px;border-bottom:1px solid #ffffff08}
+.review a{color:var(--sand)}
+.tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.foot{margin-top:28px;color:var(--mut);font-size:13px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.foot button{background:none;color:var(--mut);padding:0;text-decoration:underline;font-weight:500}
+.lockmsg{font-size:12px;color:#8c9a74;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo" onclick="go('home')">RECON<small>Identification des véhicules militaires</small></div>
+    <div class="rank" id="rank"></div>
+  </header>
+  <main id="app"></main>
+  <div class="foot">
+    <span>Photos : Wikimedia Commons (licences libres, auteurs crédités sur chaque fiche) et photos de l'utilisateur.</span>
+    <button onclick="resetAll()">Réinitialiser la progression</button>
+  </div>
+</div>
+<div class="sheet" id="sheet" onclick="if(event.target===this)closeSheet()"><div class="in" id="sheetIn"></div></div>
+
+<script src="data.js"></script>
+<script src="vehicles2.js"></script>
+<script src="credits.js"></script>
+<script>
+const LEVELS=[
+ {n:1,t:"Chars de combat",d:"Les chars principaux (MBT) les plus connus au monde : tourelle, canon, galets.",ic:"🛡️"},
+ {n:2,t:"Artillerie",d:"Obusiers automoteurs, tractés, sur camion et lance-roquettes multiples.",ic:"💥"},
+ {n:3,t:"Génie",d:"Engins de brèche, poseurs de pont, bulldozers blindés, dépannage et déminage.",ic:"🛠️"},
+ {n:4,t:"Pièces débarquées",d:"Missiles antichars, sol-air portables, lance-roquettes, lance-grenades et mortiers.",ic:"🎯"},
+ {n:5,t:"Examen final",d:"Toutes catégories mélangées, 15 questions. Le test de l'expert.",ic:"🎖️"}
+];
+const RANKS=["Recrue","Soldat","Caporal","Sergent","Lieutenant","Capitaine"];
+const V=[...(window.V1||[]),...(window.V2||[])];
+const CRED=window.CRED||{};
+
+/* ---------- photos ---------- */
+const PHS=id=>CRED[id]||[[`images/${id}.jpg`,"","",""]];
+function media(v,big,i){const p=PHS(v.id)[i||0]||PHS(v.id)[0];return `<div class="ph${big?" big":""}"><img src="${p[0]}" alt="Photo du matériel à identifier" loading="lazy"></div>`;}
+function credit(v,i){const p=PHS(v.id)[i||0];if(!p||!p[1])return"";return `<div class="cred">Photo : ${esc(p[1])}${p[2]?" · "+esc(p[2]):""}${p[3]?" · Wikimedia Commons, fichier « "+esc(p[3])+" »":""}</div>`;}
+function gallery(v){const ps=PHS(v.id);if(ps.length<2)return"";return `<div class="thumbs">${ps.map((p,i)=>`<img src="${p[0]}" alt="" class="${i?"":"on"}" loading="lazy" onclick="pickPh('${v.id}',${i},this)">`).join("")}</div>`;}
+function pickPh(id,i,el){const v=V.find(x=>x.id===id);document.getElementById("phMain").innerHTML=media(v,1,i)+credit(v,i);el.parentNode.querySelectorAll("img").forEach(x=>x.classList.remove("on"));el.classList.add("on");}
+
+/* ---------- état ---------- */
+let best={};
+try{best=JSON.parse(localStorage.getItem("recon_best")||"{}")}catch(e){best={}}
+const save=()=>{try{localStorage.setItem("recon_best",JSON.stringify(best))}catch(e){}};
+const unlocked=n=>n===1||(best[n-1]||0)>=70;
+const passed=()=>[1,2,3,4,5].filter(n=>(best[n]||0)>=70).length;
+const seenPool=()=>V.filter(v=>(best[v.c]||0)>=70);
+function renderRank(){const p=passed();document.getElementById("rank").innerHTML=`Grade<b>${RANKS[p]}</b>${p}/5 niveaux validés`;}
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const app=document.getElementById("app");
+
+/* ---------- vues ---------- */
+function go(view,arg){
+  window.scrollTo(0,0);renderRank();
+  if(view==="home")home();else if(view==="study")study(arg);else if(view==="quiz")startQuiz(arg);
+}
+function home(){
+  let h=`<h2>Centre d'entraînement</h2><p class="sub">Étudiez les fiches, puis réussissez le quiz (70 % minimum) pour débloquer le niveau suivant.</p><div class="levels">`;
+  for(const L of LEVELS){
+    const un=unlocked(L.n),b=best[L.n],cnt=L.n===5?V.length:V.filter(v=>v.c===L.n).length;
+    h+=`<div class="lvl ${un?"":"locked"}"><div class="num">${un?L.n:"🔒"}</div><div>
+      <h3>${L.ic} Niveau ${L.n} — ${L.t}</h3><p>${L.d}</p>
+      <div class="meta"><span class="tag">${cnt} ${L.n===4?"systèmes":"véhicules"}</span>
+      ${b!=null?`<span class="tag ${b>=70?"good":""}">Meilleur score : ${b} %${b>=70?" ✓":""}</span>`:""}</div>
+      <div class="btns">${L.n<5?`<button class="b2" onclick="go('study',${L.n})">📖 Étudier</button>`:`<button class="b2" onclick="go('study',0)">📖 Tout réviser</button>`}
+      <button class="b1" ${un?"":"disabled"} onclick="go('quiz',${L.n})">🎯 Quiz</button></div>
+      ${un?"":`<div class="lockmsg">Obtenez 70 % au niveau ${L.n-1} pour débloquer.</div>`}
+    </div></div>`;
+  }
+  const seen=seenPool(),ok0=seen.length>0;
+  h+=`<div class="lvl ${ok0?"":"locked"}"><div class="num">${ok0?"🎲":"🔒"}</div><div>
+    <h3>🎲 Quiz aléatoire</h3><p>15 photos tirées au hasard parmi tous les véhicules des niveaux déjà validés. Rejouable à l'infini, sans effet sur la progression.</p>
+    <div class="meta"><span class="tag">${seen.length} véhicules dans le tirage</span></div>
+    <div class="btns"><button class="b1" ${ok0?"":"disabled"} onclick="go('quiz',0)">🎲 Lancer un quiz aléatoire</button></div>
+    ${ok0?"":`<div class="lockmsg">Validez au moins un niveau pour débloquer.</div>`}
+  </div></div>`;
+  app.innerHTML=h+"</div>";
+}
+function study(n){
+  const list=n?V.filter(v=>v.c===n):V;
+  let h=`<button class="back" onclick="go('home')">← Retour</button><h2>${n?"Niveau "+n+" — "+LEVELS[n-1].t:"Toutes les fiches"}</h2>
+  <p class="sub">Touchez une fiche pour voir son indice clé d'identification.</p>
+  <div class="tabs">${[0,1,2,3,4].map(i=>`<button class="${i===n?"b1":"b2"}" onclick="study(${i})">${i?LEVELS[i-1].t:"Tout"}</button>`).join("")}</div><div class="grid">`;
+  for(const v of list){const c=PHS(v.id).length;h+=`<div class="card" onclick="openSheet('${v.id}')">${media(v)}<div class="nm">${esc(v.n)}<span>${c>1?"📷"+c+" ":""}${v.f}</span></div></div>`;}
+  h+="</div>";
+  if(n>0&&n<5&&unlocked(n))h+=`<div class="btns" style="margin-top:18px"><button class="b1" onclick="go('quiz',${n})">Je suis prêt : lancer le quiz →</button></div>`;
+  app.innerHTML=h;
+}
+function openSheet(id){
+  const v=V.find(x=>x.id===id);
+  document.getElementById("sheetIn").innerHTML=`<div class="hd"><div><h3>${esc(v.n)}</h3><div style="color:var(--mut)">${v.f} ${esc(v.p)} · ${esc(v.ty)}</div></div><button class="x" onclick="closeSheet()">✕</button></div>
+  <div class="bd"><div id="phMain">${media(v,1)}${credit(v)}</div>${gallery(v)}<div class="key"><b>Indice clé</b>${esc(v.cle)}</div>
+  <div class="facts">${v.fx.map(f=>`<div class="fact"><span>${esc(f[0])}</span>${esc(f[1])}</div>`).join("")}</div>
+  <b>Autres indices</b><ul class="ind">${v.ind.map(i=>`<li>${esc(i)}</li>`).join("")}</ul></div>`;
+  document.getElementById("sheet").classList.add("on");
+}
+function closeSheet(){document.getElementById("sheet").classList.remove("on")}
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSheet()});
+
+/* ---------- quiz (photos uniquement) ---------- */
+let Q=null;
+function startQuiz(n){
+  if(n===0?!seenPool().length:!unlocked(n))return home();
+  const pool=n===0?seenPool():n===5?V:V.filter(v=>v.c===n);
+  const N=(n===5||n===0)?15:10;
+  let picks=[];while(picks.length<N)picks=picks.concat(shuffle(pool));picks=picks.slice(0,N);
+  const qs=picks.map(v=>{
+    const others=shuffle(V.filter(x=>x.c===v.c&&x.id!==v.id)).slice(0,3).map(x=>x.n);
+    return {v,opts:shuffle([v.n,...others]),ans:v.n,pi:Math.floor(Math.random()*PHS(v.id).length)};
+  });
+  Q={n,qs,i:0,score:0,log:[]};
+  showQ();
+}
+function showQ(){
+  const q=Q.qs[Q.i],v=q.v;
+  app.innerHTML=`<button class="back" onclick="if(confirmLeave())go('home')">← Quitter le quiz</button>
+  <div class="qtop"><span>${Q.n?`${LEVELS[Q.n-1].ic} Niveau ${Q.n} — ${LEVELS[Q.n-1].t}`:"🎲 Quiz aléatoire"}</span><span class="mono">${Q.i+1}/${Q.qs.length} · ${Q.score} pts</span></div>
+  <div class="bar"><i style="width:${Q.i/Q.qs.length*100}%"></i></div>
+  <div class="qbox"><div style="border-bottom:1px solid var(--line);margin-bottom:14px">${media(v,1,q.pi)}</div>
+  <div class="opts">${q.opts.map((o,k)=>`<button class="opt" data-k="${k}">${esc(o)}</button>`).join("")}</div>
+  <div class="fb" id="fb"></div></div>`;
+  app.querySelectorAll(".opt").forEach(b=>b.onclick=()=>answer(+b.dataset.k));
+}
+let leaveArmed=false;
+function confirmLeave(){if(leaveArmed){leaveArmed=false;return true}leaveArmed=true;const b=app.querySelector(".back");b.textContent="← Toucher encore pour quitter (progression perdue)";setTimeout(()=>{leaveArmed=false;if(b.isConnected)b.textContent="← Quitter le quiz"},2500);return false}
+function answer(k){
+  const q=Q.qs[Q.i],ok=q.opts[k]===q.ans,v=q.v;
+  if(ok)Q.score++;
+  Q.log.push({v,ok});
+  app.querySelectorAll(".opt").forEach((b,j)=>{b.disabled=true;if(q.opts[j]===q.ans)b.classList.add("ok");else if(j===k)b.classList.add("ko")});
+  const fb=document.getElementById("fb");
+  fb.innerHTML=`<div class="msg ${ok?"ok":"ko"}"><b>${ok?"✓ Correct !":"✗ Raté."}</b> ${esc(v.n)} (${v.f} ${esc(v.p)}) — ${esc(v.cle)}</div>
+  <button class="b1" id="nx">${Q.i+1<Q.qs.length?"Question suivante →":"Voir le résultat"}</button>`;
+  fb.classList.add("on");
+  document.getElementById("nx").onclick=()=>{Q.i++;Q.i<Q.qs.length?showQ():result()};
+  fb.scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+function result(){
+  const pct=Math.round(Q.score/Q.qs.length*100),prev=best[Q.n]||0,wasLocked=Q.n>0&&Q.n<5&&!unlocked(Q.n+1);
+  if(Q.n&&pct>prev){best[Q.n]=pct;save();}
+  renderRank();
+  const ok=pct>=70;
+  let msg=ok?(pct===100?"Sans faute ! Œil de lynx.":"Mission accomplie."):(Q.n?"Pas encore. Révisez les fiches et réessayez (70 % requis).":"Révisez les fiches et retentez votre chance.");
+  if(ok&&wasLocked)msg+=` 🔓 Niveau ${Q.n+1} — ${LEVELS[Q.n].t} débloqué !`;
+  const miss=Q.log.filter(l=>!l.ok);
+  app.innerHTML=`<div class="res"><div class="big">${pct} %</div><div class="mono" style="color:var(--mut);margin-top:6px">${Q.score}/${Q.qs.length} bonnes réponses</div>
+  <p>${msg}</p><div class="btns"><button class="b2" onclick="go('quiz',${Q.n})">↻ Rejouer</button>
+  ${ok&&Q.n&&Q.n<5?`<button class="b1" onclick="go('quiz',${Q.n+1})">Niveau suivant →</button>`:`<button class="b1" onclick="go('study',${Q.n&&Q.n<5?Q.n:0})">📖 Réviser</button>`}
+  <button class="b2" onclick="go('home')">Accueil</button></div>
+  ${miss.length?`<div class="review"><b>À revoir :</b>${[...new Map(miss.map(m=>[m.v.id,m.v])).values()].map(v=>`<div><a href="#" onclick="openSheet('${v.id}');return false">${esc(v.n)}</a> — ${esc(v.cle)}</div>`).join("")}</div>`:""}</div>`;
+}
+function resetAll(){
+  const f=document.querySelector(".foot button");
+  if(f.dataset.armed){best={};save();delete f.dataset.armed;f.textContent="Réinitialiser la progression";go("home");}
+  else{f.dataset.armed=1;f.textContent="Confirmer la réinitialisation ?";setTimeout(()=>{if(f.dataset.armed){delete f.dataset.armed;f.textContent="Réinitialiser la progression"}},3000);}
+}
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+go("home");
+</script>
+</body>
+</html>
